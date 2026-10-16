@@ -3,7 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 import {
   LayoutDashboard, CarFront, MapPin, Settings2, Plus, Search, ArrowUpRight,
   UploadCloud, X, Trash2, ExternalLink, RefreshCw, CheckCircle2, ShieldCheck,
-  Menu, Link2, CloudOff, LogOut, Camera, AlertCircle, Info, LockKeyhole,
+  Menu, Link2, CloudOff, LogOut, Camera, AlertCircle, Info, LockKeyhole, Eye, EyeOff,
   Navigation, Check, LoaderCircle, Globe2, ClipboardList, ChevronRight,
   Building2, SlidersHorizontal, ImagePlus, Wifi, Save, Send, ChevronDown
 } from 'lucide-react';
@@ -44,43 +44,80 @@ function Field({label,hint,children}:{label:string;hint?:string;children:React.R
   return <label className="field"><span className="field-label">{label}</span>{children}{hint&&<small>{hint}</small>}</label>;
 }
 
-function AuthScreen(){
+function SetupScreen(){
+  return <div className="setup-screen"><div className="setup-card">
+    <div className="brand setup-brand"><span className="brand-icon"><CarFront size={23}/></span><span>SHOPPING <b>CAR</b><small>PORTAL DE ACESSO</small></span></div>
+    <div className="auth-mini"><LockKeyhole size={21}/></div>
+    <span className="eyebrow">ACESSO RESTRITO</span>
+    <h1>Portal aguardando configuração</h1>
+    <p>O login só será liberado quando o Supabase da Shopping Car estiver configurado. O painel e os dados dos veículos não ficam públicos sem autenticação.</p>
+    <div className="setup-tip"><ShieldCheck size={19}/><span>Defina <code>VITE_SUPABASE_URL</code> e <code>VITE_SUPABASE_ANON_KEY</code> na Vercel. Crie os usuários autorizados no Supabase Auth.</span></div>
+    <p className="setup-foot">Shopping Car · Sistema interno de gestão de anúncios</p>
+  </div></div>;
+}
+
+function AuthScreen({recovery,onRecovered}:{recovery:boolean;onRecovered:()=>void}){
   const [email,setEmail]=useState('');
   const [password,setPassword]=useState('');
-  const [register,setRegister]=useState(false);
+  const [confirmPassword,setConfirmPassword]=useState('');
+  const [showPassword,setShowPassword]=useState(false);
+  const [mode,setMode]=useState<'login'|'forgot'>(window.location.search.includes('forgot=1')?'forgot':'login');
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
+  const [success,setSuccess]=useState('');
   const submit=async(e:React.FormEvent)=>{
-    e.preventDefault();setBusy(true);setError('');
+    e.preventDefault();setBusy(true);setError('');setSuccess('');
     try{
-      if(register){
-        const {error}=await supabase!.auth.signUp({email,password});
+      if(recovery){
+        if(password.length<8)throw new Error('A nova senha precisa ter pelo menos 8 caracteres.');
+        if(password!==confirmPassword)throw new Error('As senhas não coincidem.');
+        const {error}=await supabase!.auth.updateUser({password});
         if(error)throw error;
-        setError('Cadastro realizado. Confirme o e-mail, caso a verificação esteja habilitada.');
-      }else{
-        const {error}=await supabase!.auth.signInWithPassword({email,password});
-        if(error)throw error;
+        setPassword('');setConfirmPassword('');
+        onRecovered();
+        return;
       }
+      if(mode==='forgot'){
+        const redirectTo=window.location.origin+'/?reset-password=1';
+        const {error}=await supabase!.auth.resetPasswordForEmail(email.trim(),{redirectTo});
+        if(error)throw error;
+        setSuccess('Se o e-mail estiver cadastrado, você receberá instruções para recuperar o acesso.');
+        return;
+      }
+      const {error}=await supabase!.auth.signInWithPassword({email:email.trim(),password});
+      if(error)throw new Error(error.message==='Invalid login credentials'?'E-mail ou senha incorretos.':error.message);
     }catch(e){setError(errorText(e));}finally{setBusy(false);}
   };
+  const title=recovery?'Nova senha de acesso':mode==='forgot'?'Recuperar acesso':'Acesse sua central';
   return <div className="auth-layout">
     <div className="auth-promo">
-      <div className="brand brand-light"><span className="brand-icon"><CarFront size={23}/></span><span>SHOPPING <b>CAR</b><small>CENTRAL OLX</small></span></div>
-      <div className="promo-bottom"><span className="eyebrow">GESTÃO CENTRALIZADA</span><h1>Seu estoque.<br/>Seu controle.<br/><em>Uma única central.</em></h1><p>Cadastre veículos, organize sua operação e publique na OLX com a integração oficial.</p></div>
-      <div className="promo-decoration"/>
+      <div className="brand brand-light"><span className="brand-icon"><CarFront size={23}/></span><span>SHOPPING <b>CAR</b><small>PORTAL DE ACESSO</small></span></div>
+      <div className="promo-bottom"><span className="eyebrow">AMBIENTE EXCLUSIVO DA EQUIPE</span><h1>Seu estoque.<br/>Sua operação.<br/><em>Tudo conectado.</em></h1>
+        <p>Um único lugar para organizar o estoque, preparar anúncios e controlar a conexão oficial com a OLX.</p>
+        <div className="auth-promo-steps"><span><ShieldCheck size={16}/> Acesso protegido</span><span><CarFront size={16}/> Gestão centralizada</span><span><Link2 size={16}/> Integração oficial</span></div>
+      </div><div className="promo-decoration"/>
     </div>
     <div className="auth-panel"><div className="auth-card">
-      <div className="auth-mini"><LockKeyhole size={19}/></div>
-      <h2>{register?'Criar acesso':'Bem-vindo de volta'}</h2>
-      <p>Entre para gerenciar os veículos da concessionária.</p>
+      <div className="auth-mini"><LockKeyhole size={20}/></div>
+      <span className="eyebrow">SHOPPING CAR · PORTAL INTERNO</span>
+      <h2>{title}</h2>
+      <p>{recovery?'Escolha uma senha segura para voltar ao painel.':mode==='forgot'?'Enviaremos o link de redefinição para seu e-mail autorizado.':'Entre com seu e-mail e senha cadastrados pela concessionária.'}</p>
       <form onSubmit={submit} className="auth-form">
-        <Field label="E-mail"><input type="email" autoComplete="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="seu@email.com"/></Field>
-        <Field label="Senha"><input type="password" autoComplete={register?'new-password':'current-password'} minLength={6} required value={password} onChange={e=>setPassword(e.target.value)} placeholder="Sua senha"/></Field>
-        {error&&<div className="inline-alert">{error}</div>}
-        <button className="btn btn-primary btn-wide" disabled={busy}>{busy?<LoaderCircle className="spin" size={17}/>:null}{register?'Criar conta':'Acessar painel'} <ArrowUpRight size={17}/></button>
+        {!recovery&&<Field label="E-mail de acesso"><input type="email" autoComplete="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="usuario@shoppingcar.com.br"/></Field>}
+        {mode==='login'||recovery?<Field label={recovery?'Nova senha':'Senha'}>
+          <div className="password-input"><input type={showPassword?'text':'password'} autoComplete={recovery?'new-password':'current-password'} minLength={recovery?8:1} required value={password} onChange={e=>setPassword(e.target.value)} placeholder={recovery?'Mínimo de 8 caracteres':'Digite sua senha'}/>
+          <button type="button" className="reveal-password" onClick={()=>setShowPassword(x=>!x)} aria-label={showPassword?'Ocultar senha':'Mostrar senha'}>{showPassword?<EyeOff size={17}/>:<Eye size={17}/>}</button></div>
+        </Field>:null}
+        {recovery&&<Field label="Confirmar nova senha"><input type={showPassword?'text':'password'} autoComplete="new-password" required minLength={8} value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)} placeholder="Repita a nova senha"/></Field>}
+        {error&&<div className="inline-alert auth-error"><AlertCircle size={17}/>{error}</div>}
+        {success&&<div className="inline-alert auth-success"><CheckCircle2 size={18}/>{success}</div>}
+        <button className="btn btn-primary btn-wide auth-submit" type="submit" disabled={busy}>{busy?<LoaderCircle className="spin" size={17}/>:recovery?<CheckCircle2 size={17}/>:mode==='forgot'?<Send size={17}/>:<LockKeyhole size={17}/>}
+          {recovery?'Salvar nova senha':mode==='forgot'?'Enviar link de recuperação':'Entrar no sistema'} <ArrowUpRight size={17}/></button>
       </form>
-      <button className="link-button" onClick={()=>{setRegister(!register);setError('');}}>{register?'Já tenho uma conta':'Primeiro acesso? Criar conta'}</button>
-      <small>Autenticação protegida pelo Supabase.</small>
+      {!recovery&&<button className="link-button" onClick={()=>{setMode(mode==='login'?'forgot':'login');setError('');setSuccess('');}}>
+        {mode==='login'?'Esqueci minha senha':'Voltar para o login'}
+      </button>}
+      <div className="auth-privacy"><ShieldCheck size={17}/><span>Portal reservado a usuários autorizados. Sua senha da OLX será solicitada somente no site oficial da OLX após conectar sua conta.</span></div>
     </div></div>
   </div>;
 }
@@ -204,6 +241,8 @@ function App(){
   const [page,setPage]=useState<Page>('overview');
   const [session,setSession]=useState<Session|null>(null);
   const [authReady,setAuthReady]=useState(!cloudMode);
+  const [passwordRecovery,setPasswordRecovery]=useState(window.location.search.includes('reset-password=1'));
+  const [olxTest,setOlxTest]=useState<{plan:string;available:number;total:number;checkedAt:string}|null>(null);
   const [vehicles,setVehicles]=useState<Vehicle[]>([]);
   const [loading,setLoading]=useState(true);
   const [editor,setEditor]=useState<Vehicle|null>(null);
@@ -218,7 +257,10 @@ function App(){
   useEffect(()=>{
     if(!supabase)return;
     void supabase.auth.getSession().then(({data})=>{setSession(data.session);setAuthReady(true);});
-    const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,current)=>{setSession(current);setAuthReady(true);});
+    const {data:{subscription}}=supabase.auth.onAuthStateChange((event,current)=>{
+      setSession(current);setAuthReady(true);
+      if(event==='PASSWORD_RECOVERY')setPasswordRecovery(true);
+    });
     return ()=>subscription.unsubscribe();
   },[]);
   const reload=useCallback(async()=>{
@@ -295,9 +337,26 @@ function App(){
     try{const response=await api('connect',session.access_token);window.location.assign(response.url);}
     catch(e){flash(errorText(e),'error');setWorking(null);}
   };
+  const verifyOlx=async()=>{
+    if(!session)return;
+    setWorking('verify');setOlxTest(null);
+    try{
+      const result=await api('verify',session.access_token);
+      setOlxTest({plan:result.plan,available:result.available,total:result.total,checkedAt:result.checkedAt});
+      flash('Integração validada: a OLX confirmou o acesso à API e retornou os dados do plano.');
+    }catch(e){flash('Falha no teste da OLX: '+errorText(e),'error');}
+    finally{setWorking(null);}
+  };
+  const finishRecovery=()=>{
+    setPasswordRecovery(false);
+    const next=new URL(window.location.href);
+    next.searchParams.delete('reset-password');
+    window.history.replaceState({},'',next.pathname+next.search);
+    flash('Senha alterada com sucesso. Seu acesso está liberado.');
+  };
   const disconnect=async()=>{
     if(!session||!window.confirm('Desconectar OLX? Isso não retira anúncios publicados.'))return;
-    try{await api('disconnect',session.access_token,'POST');setConnected(false);flash('Conta OLX desconectada.');}
+    try{await api('disconnect',session.access_token,'POST');setConnected(false);setOlxTest(null);flash('Conta OLX desconectada.');}
     catch(e){flash(errorText(e),'error');}
   };
   const markSold=async(v:Vehicle)=>{
@@ -319,14 +378,15 @@ function App(){
     ['settings','Integração OLX',<Settings2 size={19}/>]
   ];
   if(!authReady)return <div className="loading-screen"><LoaderCircle size={27} className="spin"/> Preparando sua central...</div>;
-  if(cloudMode&&!session)return <AuthScreen/>;
+  if(!cloudMode)return <SetupScreen/>;
+  if(!session||passwordRecovery)return <AuthScreen recovery={passwordRecovery} onRecovered={finishRecovery}/>;
   return <div className="app-shell">
     <aside className={'sidebar '+(mobileMenu?'mobile-open':'')}>
       <div className="brand"><span className="brand-icon"><CarFront size={23}/></span><span>SHOPPING <b>CAR</b><small>CENTRAL DE ANÚNCIOS</small></span></div>
       <div className="sidebar-label">MENU PRINCIPAL</div>
       <nav className="side-nav">{nav.map(([key,label,icon])=><button key={key} className={page===key?'active':''} onClick={()=>{setPage(key);setMobileMenu(false);}}>{icon}<span>{label}</span>{page===key&&<ChevronRight size={15} className="nav-chevron"/>}</button>)}</nav>
       <div className="sidebar-grow"/>
-      <div className="sidebar-bottom"><div className="sidebar-integration"><span className={'status-lamp '+(connected?'online':'')}/><div><b>{connected?'OLX conectada':'OLX não conectada'}</b><small>{connected?'Pronta para integração':'Aguardando autorização'}</small></div></div><div className="sidebar-user"><span className="avatar">SC</span><div><b>Shopping Car</b><small>{cloudMode?'Painel de operação':'Modo demonstração'}</small></div>{session&&<button className="icon-btn" title="Sair" onClick={()=>void supabase?.auth.signOut()}><LogOut size={17}/></button>}</div></div>
+      <div className="sidebar-bottom"><div className="sidebar-integration"><span className={'status-lamp '+(connected?'online':'')}/><div><b>{connected?'OLX conectada':'OLX não conectada'}</b><small>{connected?'Pronta para integração':'Aguardando autorização'}</small></div></div><div className="sidebar-user"><span className="avatar">SC</span><div><b>Shopping Car</b><small>{session?.user.email||'Painel de operação'}</small></div>{session&&<button className="icon-btn" title="Sair" onClick={()=>void supabase?.auth.signOut()}><LogOut size={17}/></button>}</div></div>
     </aside>
     {mobileMenu&&<div className="sidebar-scrim" onClick={()=>setMobileMenu(false)}/>}
     <main className="main-area">
@@ -362,7 +422,18 @@ function App(){
           <div className="heading-row"><div><span className="eyebrow">CONFIGURAÇÃO E ACESSO</span><h1>Integração OLX <span className="heading-dot">.</span></h1><p>Conexão segura com sua conta profissional.</p></div></div>
           <div className="settings-grid"><section className="panel settings-main"><div className="settings-logo">olx</div><h2>{connected?'Sua conta está conectada':'Conecte sua conta empresarial'}</h2><p>A autenticação acontece no ambiente oficial da OLX. Suas credenciais de acesso não são solicitadas pelo nosso painel.</p><div className={'connection-status '+(connected?'yes':'')}><span className={'status-lamp '+(connected?'online':'')}/>{connected?'Integração conectada':'Integração desconectada'}</div>
             {!cloudMode?<div className="inline-alert"><CloudOff size={17}/> Configure Supabase e publique no Vercel para habilitar a conexão oficial.</div>:!configured?<div className="inline-alert"><AlertCircle size={17}/> Credenciais OLX ainda não cadastradas no backend Vercel.</div>:null}
-            {connected?<div className="button-row"><button className="btn btn-light" onClick={()=>void connectionCheck()}><RefreshCw size={17}/> Atualizar conexão</button><button className="btn btn-outline" onClick={()=>void disconnect()}>Desconectar</button></div>:<button className="btn btn-primary" onClick={()=>void connect()} disabled={!cloudMode||!configured||Boolean(working)}><Link2 size={17}/> Conectar minha conta OLX <ArrowUpRight size={16}/></button>}
+            {connected?<div className="integration-actions">
+              <div className="connection-test">
+                <div className="connection-test-heading"><div className="test-icon"><ShieldCheck size={20}/></div><div><b>Validar acesso à API OLX</b><p>Consulta seu plano e saldo de anúncios sem publicar nada.</p></div></div>
+                {olxTest&&<div className="test-success"><CheckCircle2 size={17}/><span><b>Integração validada!</b><small>{olxTest.plan} · {olxTest.available} de {olxTest.total} inserções disponíveis</small><small>Verificado em {new Date(olxTest.checkedAt).toLocaleString('pt-BR')}</small></span></div>}
+                <button className="btn btn-primary btn-wide" onClick={()=>void verifyOlx()} disabled={Boolean(working)}>{working==='verify'?<LoaderCircle size={17} className="spin"/>:<ShieldCheck size={17}/>} {working==='verify'?'Verificando conexão...':'Testar conexão com a OLX'}</button>
+              </div>
+              <div className="button-row"><button className="btn btn-light" onClick={()=>void connectionCheck()}><RefreshCw size={17}/> Atualizar status</button><button className="btn btn-outline" onClick={()=>void disconnect()}>Desconectar</button></div>
+            </div>:<div className="integration-actions"><div className="connection-flow">
+                <div><span>01</span><p><b>Login Shopping Car</b><small>Você já está conectado ao portal.</small></p><CheckCircle2 size={18}/></div>
+                <div><span>02</span><p><b>Autorizar na OLX</b><small>Você será redirecionado para auth.olx.com.br.</small></p><ArrowUpRight size={17}/></div>
+                <div><span>03</span><p><b>Validar conexão</b><small>Depois, consulte o saldo da conta sem publicar.</small></p><ShieldCheck size={17}/></div>
+              </div><button className="btn btn-primary btn-wide" onClick={()=>void connect()} disabled={!cloudMode||!configured||Boolean(working)}><Link2 size={17}/> Conectar conta na OLX <ArrowUpRight size={16}/></button></div>}
           </section><section className="panel settings-checklist"><h3>O que você precisa</h3><div className="checklist"><div><CheckCircle2 size={18}/><span>Plano profissional OLX compatível com API</span></div><div><CheckCircle2 size={18}/><span>Aplicação cadastrada e autorização autoupload</span></div><div><CheckCircle2 size={18}/><span>Supabase e ambiente de produção configurados</span></div><div><CheckCircle2 size={18}/><span>Fotos públicas e dados oficiais do veículo</span></div></div><a className="documentation-link" href="https://developers.olx.com.br/anuncio/api/home.html" target="_blank" rel="noopener noreferrer"><ClipboardList size={17}/> Documentação oficial <ExternalLink size={15}/></a></section></div>
           <div className="panel policy-panel"><ShieldCheck size={23}/><div><h3>14 cidades: um planejamento, não 14 anúncios iguais</h3><p>O sistema foi projetado para permitir a seleção de regiões estratégicas, mas só envia um anúncio por veículo usando o CEP real. A publicação duplicada em diferentes cidades está bloqueada em respeito às regras da OLX.</p></div></div>
         </>}

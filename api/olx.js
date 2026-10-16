@@ -127,7 +127,25 @@ export default async function handler(req,res){
     if(req.method==='GET'&&action==='connection'){
       const {data,error}=await db.from('olx_connections').select('connected_at').eq('user_id',user.id).maybeSingle();
       if(error)throw error;
-      return res.json({connected:Boolean(data),connected_at:data?.connected_at||null,configured:Boolean(process.env.OLX_CLIENT_ID)});
+      const configured=['OLX_CLIENT_ID','OLX_CLIENT_SECRET','OLX_REDIRECT_URI','APP_ORIGIN'].every(name=>Boolean(process.env[name]));
+      return res.json({connected:Boolean(data),connected_at:data?.connected_at||null,configured});
+    }
+    if(req.method==='GET'&&action==='verify'){
+      const token=await connection(db,user.id);
+      const response=await fetch(OLX_API+'/autoupload/balance',{
+        method:'GET',
+        headers:{Authorization:'Bearer '+token,Accept:'application/json','User-Agent':'ShoppingCar-OLX-Integrator/1.0'}
+      });
+      const details=await response.json().catch(()=>({}));
+      if(response.status===401)throw Object.assign(new Error('Credencial OLX inválida. Desconecte e autorize a conta novamente.'),{status:401});
+      if(response.status===410)throw Object.assign(new Error('Conta autorizada, mas a OLX não encontrou um plano profissional com limite de anúncios. Verifique o contrato antes de publicar.'),{status:409});
+      if(!response.ok)throw Object.assign(new Error('Falha na consulta de saldo OLX (HTTP '+response.status+'). Verifique suas permissões ou tente novamente.'),{status:502});
+      if(!details.ads || !Number.isFinite(Number(details.ads.total)))throw Object.assign(new Error('A OLX respondeu, mas sem dados reconhecíveis do plano. Não é possível confirmar a integração.'),{status:502});
+      return res.json({
+        ok:true,plan:String(details.name||'Plano profissional OLX').slice(0,120),
+        available:Number(details.ads.available)||0,total:Number(details.ads.total)||0,
+        checkedAt:new Date().toISOString()
+      });
     }
     if(req.method==='GET'&&action==='connect'){
       const cfg=config();
