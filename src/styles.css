@@ -61,3 +61,86 @@
 .test-success small{display:block;font-size:11px;margin-top:5px;color:#537c6a}
 .sidebar-user{min-width:0}.sidebar-user>div{min-width:0}.sidebar-user small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px}
 @media(max-width:720px){.auth-promo-steps{margin-top:20px;gap:5px}.auth-promo-steps span{font-size:9px;padding:7px}.auth-promo-steps svg{width:13px;height:13px}.setup-card{padding:24px}.setup-card h1{font-size:21px}}
+
+
+/* Identidade oficial Shopping Car — preto, branco e verde */
+:root{
+  --sc-green:#19cf35;
+  --sc-green-hover:#35e24d;
+  --sc-green-dark:#057b1a;
+  --sc-black:#0a0d0b;
+  --sc-charcoal:#131a15;
+}
+.sidebar{background:var(--sc-black);color:#d6e4d9}
+.sidebar-label{color:#91a998}
+.side-nav button{color:#b0c1b3}
+.side-nav button:hover{background:#14231a;color:#fff}
+.side-nav button.active{background:#183c24;color:#fff;box-shadow:inset 3px 0 var(--sc-green)}
+.side-nav button.active svg:first-child{color:var(--sc-green)}
+.sidebar-bottom{border-top-color:#26352b}
+.sidebar-integration{background:#101b13;border-color:#28402c}
+.sidebar-integration b,.sidebar-user b{color:#f6fff7}
+.brand{height:auto;min-height:98px;display:flex;align-items:flex-start;justify-content:center;flex-direction:column;gap:4px;white-space:normal}
+.brand-image{width:min(100%,196px);height:auto;aspect-ratio:208/80;object-fit:contain;object-position:left center;display:block}
+.sidebar-brand{padding:0 10px 23px;min-height:113px}
+.brand-tagline{font-family:"DM Sans",sans-serif!important;font-size:9px!important;letter-spacing:2.1px!important;font-weight:800!important;color:#89b394!important;line-height:1.25!important;margin:0 0 0 2px!important}
+.brand-light{padding:0;min-height:auto;position:relative;z-index:1}
+.brand-light .brand-image{width:210px;max-width:100%}
+.brand-light .brand-tagline{color:#80cb8c!important}
+.setup-brand{background:var(--sc-black);border-radius:12px;padding:12px 18px 13px!important;min-height:90px;display:inline-flex;align-items:flex-start;justify-content:center;width:min(100%,245px)}
+.setup-brand .brand-image{width:194px}
+.setup-brand .brand-tagline{color:#78cb87!important}
+.brand-fallback{display:flex;align-items:center;gap:8px;color:white;font-size:17px;letter-spacing:-.4px;font-weight:800}
+.brand-fallback svg{color:var(--sc-green)}
+.brand-fallback.compact{font-size:11px}
+.top-logo{background:var(--sc-black);border-radius:8px;padding:4px 10px;display:inline-flex;align-items:center;justify-content:center}
+.brand-image-compact{width:118px;height:auto}
+.topbar{border-bottom-color:#e6eee8}
+.main-content{background:transparent}
+.eyebrow{color:var(--sc-green-dark)}
+.heading-dot{color:var(--sc-green)}
+.btn-primary{background:var(--sc-green);color:#061708;box-shadow:0 3px 10px #19cf3526}
+.btn-primary:hover{background:var(--sc-green-hover)}
+.btn-dark{background:#122619;color:white}
+.btn-dark:hover{background:#183c24}
+.text-action,.link-button,.documentation-link{color:var(--sc-green-dark)}
+.stat-icon.green-icon{background:#e7fbec;color:var(--sc-green-dark)}
+.top-mode.connected{color:var(--sc-green-dark);background:#e7fbea;border-color:#c8eecd}
+.integration-checks svg,.checklist svg,.safe-note svg{color:#129e2a}
+.integration-checks div{color:#617b67}
+.status-green{background:#e3f9e8;color:#087721}
+.small-dot.green{background:var(--sc-green)}
+.status-lamp.online{background:var(--sc-green);box-shadow:0 0 0 4px #19cf3530}
+.recent-item:hover{background:#f6fcf7}
+.city-option.active{color:var(--sc-green-dark);background:#e9fbea}
+.counter{color:var(--sc-green-dark);background:#e8fced}
+.city-chip{background:#e2fbe7;color:#0b7323}
+.editor-tabs button.active{color:var(--sc-green-dark);border-bottom-color:var(--sc-green)}
+.feature-check input{accent-color:var(--sc-green)}
+.field input:focus,.field select:focus,.field textarea:focus,.custom-city input:focus{outline-color:var(--sc-green)}
+.connection-status.yes,.top-mode.connected{color:#0c7f28}
+.settings-main .connection-status.yes{background:#e8faee;border-color:#ccefd5}
+.settings-main .btn-primary{min-height:45px}
+.connection-test .btn-primary{box-shadow:none}
+.connection-test-heading .test-icon{color:var(--sc-green-dark);background:#dff9e6}
+.auth-layout{background:#fff}
+.auth-promo{background:radial-gradient(circle at 95% 85%,#214b2a 0%,#0e2015 45%,#070a08 100%)}
+.auth-promo .eyebrow{color:var(--sc-green)}
+.auth-promo .promo-bottom h1 em{color:#44e55c}
+.auth-promo-steps svg{color:#43de5b}
+.auth-mini{background:#e9fbef;color:var(--sc-green-dark)}
+.auth-form .password-input:focus-within{outline-color:var(--sc-green)}
+.auth-privacy svg{color:var(--sc-green-dark)}
+.setup-screen{background:radial-gradient(circle at 12% 15%,#183c24 0%,#071108 70%)}
+.setup-tip svg{color:var(--sc-green-dark)}
+.logo-soft-shadow{filter:drop-shadow(0 6px 20px #003a102e)}
+@media(max-width:720px){
+  .sidebar-brand{min-height:108px}
+  .brand-image{width:181px}
+  .brand-light{padding:0}
+  .brand-light .brand-image{width:185px}
+  .top-logo{padding:5px 7px}
+  .brand-image-compact{width:85px}
+  .breadcrumbs{gap:6px}
+  .auth-promo .brand-tagline{display:none}
+}

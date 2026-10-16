@@ -71,3 +71,17 @@ A OLX armazena os anúncios publicados. O Supabase armazena as credenciais do **
 
 ## Validação em ambiente real
 O CI do GitHub verifica a compilação TypeScript e o build Vite. Antes de produção, ainda é necessário configurar Supabase/Vercel e testar o OAuth com credenciais reais da OLX. O painel não pede login OLX diretamente; o fluxo oficial redireciona ao provedor.
+
+## Identidade visual Shopping Car (outubro/2026)
+A marca exibida no login, barra lateral e cabeçalho utiliza a imagem oficial fornecida pela concessionária:
+- Logo: https://i.imgur.com/eKoIZdQ.png
+- Paleta: preto profundo, branco e verde; estados de erro/alerta preservam suas cores semânticas.
+- A imagem mantém sua proporção e recebe dimensões para evitar alterações de layout; em caso de indisponibilidade da hospedagem externa, o sistema exibe a marca textual de reserva.
+- Para maior autonomia no futuro, hospedar uma cópia WebP da logo em /public e substituir a URL remota. O endereço fornecido não pôde ser validado no ambiente de desenvolvimento.
+
+## Supabase de produção fornecido pela Shopping Car
+O repositório agora inclui **somente a URL e a chave publishable (pública)** em `.env.production`, para que o frontend possa inicializar o Auth e exibir o formulário de login em builds de produção. **Ainda é necessário executar o SQL de `supabase/schema.sql` no projeto indicado e criar usuários no Auth.**
+
+As chaves privadas `SUPABASE_SERVICE_ROLE_KEY` e `OLX_CLIENT_SECRET` **não devem ser enviadas por chat ou commitadas**. Configure-as no cofre de variáveis de ambiente do projeto Vercel. As variáveis de ambiente cadastradas na Vercel podem sobrescrever o arquivo `.env.production` quando a aplicação for compilada; confira para não usar outro Supabase por engano.
+
+Sem credenciais da OLX e autorização profissional real, o botão Conectar OLX permanece indisponível, embora o login do portal funcione após a criação do usuário no Supabase.

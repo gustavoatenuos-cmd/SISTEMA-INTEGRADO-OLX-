@@ -44,9 +44,24 @@ function Field({label,hint,children}:{label:string;hint?:string;children:React.R
   return <label className="field"><span className="field-label">{label}</span>{children}{hint&&<small>{hint}</small>}</label>;
 }
 
+const SHOPPING_CAR_LOGO = 'https://i.imgur.com/eKoIZdQ.png';
+
+function BrandLogo({compact = false}:{compact?:boolean}){
+  const [failed,setFailed]=useState(false);
+  if(failed)return <span className={'brand-fallback'+(compact?' compact':'')}><CarFront size={compact?18:25}/><strong>SHOPPING CAR</strong></span>;
+  return <img
+    className={'brand-image'+(compact?' brand-image-compact':'')}
+    src={SHOPPING_CAR_LOGO}
+    alt="Shopping Car"
+    width={208} height={80}
+    loading="eager" decoding="async"
+    onError={()=>setFailed(true)}
+  />;
+}
+
 function SetupScreen(){
   return <div className="setup-screen"><div className="setup-card">
-    <div className="brand setup-brand"><span className="brand-icon"><CarFront size={23}/></span><span>SHOPPING <b>CAR</b><small>PORTAL DE ACESSO</small></span></div>
+    <div className="brand setup-brand"><BrandLogo/><small className="brand-tagline">PORTAL DE ACESSO</small></div>
     <div className="auth-mini"><LockKeyhole size={21}/></div>
     <span className="eyebrow">ACESSO RESTRITO</span>
     <h1>Portal aguardando configuração</h1>
@@ -91,7 +106,7 @@ function AuthScreen({recovery,onRecovered}:{recovery:boolean;onRecovered:()=>voi
   const title=recovery?'Nova senha de acesso':mode==='forgot'?'Recuperar acesso':'Acesse sua central';
   return <div className="auth-layout">
     <div className="auth-promo">
-      <div className="brand brand-light"><span className="brand-icon"><CarFront size={23}/></span><span>SHOPPING <b>CAR</b><small>PORTAL DE ACESSO</small></span></div>
+      <div className="brand brand-light"><BrandLogo/><small className="brand-tagline">PORTAL DE ACESSO</small></div>
       <div className="promo-bottom"><span className="eyebrow">AMBIENTE EXCLUSIVO DA EQUIPE</span><h1>Seu estoque.<br/>Sua operação.<br/><em>Tudo conectado.</em></h1>
         <p>Um único lugar para organizar o estoque, preparar anúncios e controlar a conexão oficial com a OLX.</p>
         <div className="auth-promo-steps"><span><ShieldCheck size={16}/> Acesso protegido</span><span><CarFront size={16}/> Gestão centralizada</span><span><Link2 size={16}/> Integração oficial</span></div>
@@ -382,7 +397,7 @@ function App(){
   if(!session||passwordRecovery)return <AuthScreen recovery={passwordRecovery} onRecovered={finishRecovery}/>;
   return <div className="app-shell">
     <aside className={'sidebar '+(mobileMenu?'mobile-open':'')}>
-      <div className="brand"><span className="brand-icon"><CarFront size={23}/></span><span>SHOPPING <b>CAR</b><small>CENTRAL DE ANÚNCIOS</small></span></div>
+      <div className="brand sidebar-brand"><BrandLogo/><small className="brand-tagline">CENTRAL DE ANÚNCIOS</small></div>
       <div className="sidebar-label">MENU PRINCIPAL</div>
       <nav className="side-nav">{nav.map(([key,label,icon])=><button key={key} className={page===key?'active':''} onClick={()=>{setPage(key);setMobileMenu(false);}}>{icon}<span>{label}</span>{page===key&&<ChevronRight size={15} className="nav-chevron"/>}</button>)}</nav>
       <div className="sidebar-grow"/>
@@ -390,7 +405,7 @@ function App(){
     </aside>
     {mobileMenu&&<div className="sidebar-scrim" onClick={()=>setMobileMenu(false)}/>}
     <main className="main-area">
-      <header className="topbar"><div className="breadcrumbs"><button className="mobile-menu icon-btn" onClick={()=>setMobileMenu(true)}><Menu size={21}/></button><span>Shopping Car</span><ChevronRight size={14}/><strong>{nav.find(n=>n[0]===page)?.[1]}</strong></div><div className="top-actions"><span className={'top-mode '+(connected?'connected':'')}>{connected?<Wifi size={15}/>:<CloudOff size={15}/>} {connected?'OLX conectada':cloudMode?'Conectar OLX':'Modo local'}</span><span className="top-avatar">SC</span></div></header>
+      <header className="topbar"><div className="breadcrumbs"><button className="mobile-menu icon-btn" onClick={()=>setMobileMenu(true)}><Menu size={21}/></button><span className="top-logo"><BrandLogo compact/></span><ChevronRight size={14}/><strong>{nav.find(n=>n[0]===page)?.[1]}</strong></div><div className="top-actions"><span className={'top-mode '+(connected?'connected':'')}>{connected?<Wifi size={15}/>:<CloudOff size={15}/>} {connected?'OLX conectada':cloudMode?'Conectar OLX':'Modo local'}</span><span className="top-avatar">SC</span></div></header>
       <div className="main-content">
         {notice&&<div className={'toast toast-'+notice.type}><span>{notice.type==='success'?<CheckCircle2 size={18}/>:<AlertCircle size={18}/>}</span><p>{notice.message}</p><button onClick={()=>setNotice(null)} aria-label="Dispensar"><X size={16}/></button></div>}
         {page==='overview'&&<>
