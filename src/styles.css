@@ -144,3 +144,22 @@
   .breadcrumbs{gap:6px}
   .auth-promo .brand-tagline{display:none}
 }
+
+/* Diagnóstico de integração: separa configuração de banco e credenciais OLX. */
+.integration-diagnostics{border:1px solid #e5ece7;border-radius:11px;background:#f9fcfa;padding:15px;margin:16px 0 19px}
+.integration-diagnostic-title{display:flex;align-items:center;gap:10px;color:#41684a;margin-bottom:12px}
+.integration-diagnostic-title>div{min-width:0;flex:1}
+.integration-diagnostic-title b{display:block;color:#263f2c;font-size:12px}
+.integration-diagnostic-title small{display:block;font-size:10px;color:#829588;margin-top:4px;line-height:1.4}
+.integration-diagnostic-title .btn{padding:8px 10px;font-size:10px}
+.integration-diagnostic-list{display:grid;gap:8px}
+.integration-diagnostic-list>div{display:flex;align-items:flex-start;gap:10px;border:1px solid #e6eee8;border-radius:8px;background:#fff;padding:11px 12px}
+.integration-diagnostic-list>div>svg{flex-shrink:0;margin-top:1px}
+.integration-diagnostic-list b{display:block;font-size:11px;color:#405449}
+.integration-diagnostic-list small{display:block;margin-top:5px;color:#778a7e;font-size:11px;line-height:1.55;overflow-wrap:anywhere}
+.integration-diagnostic-list .diag-ok>svg{color:#159b3a}
+.integration-diagnostic-list .diag-issue{background:#fffaf5;border-color:#f2e4d7}
+.integration-diagnostic-list .diag-issue>svg{color:#c9803d}
+.integration-diagnostics .inline-alert{margin:11px 0 0}
+.integration-diagnostics .diagnostic-help{margin:13px 2px 0;color:#64766b;font-size:11px;line-height:1.7}
+@media(max-width:720px){.integration-diagnostic-title{flex-wrap:wrap}.integration-diagnostic-title .btn{margin-left:auto}}

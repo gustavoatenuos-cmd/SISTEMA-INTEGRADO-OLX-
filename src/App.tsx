@@ -16,6 +16,12 @@ import type { City, Vehicle, VehicleStatus } from './lib/data';
 
 type Page = 'overview' | 'vehicles' | 'cities' | 'settings';
 type Notice = { message: string; type: 'error' | 'success' };
+type IntegrationHealth = {
+  supabase:{ready:boolean;missing:string[]};
+  olx:{ready:boolean;missing:string[]};
+  checkedAt:string;
+};
+
 type Option = { label: string; value: string };
 
 const statusText:Record<VehicleStatus,string>={
@@ -266,6 +272,8 @@ function App(){
   const [notice,setNotice]=useState<Notice|null>(null);
   const [connected,setConnected]=useState(false);
   const [configured,setConfigured]=useState(false);
+  const [health,setHealth]=useState<IntegrationHealth|null>(null);
+  const [backendError,setBackendError]=useState<string|null>(null);
   const [working,setWorking]=useState<string|null>(null);
   const [mobileMenu,setMobileMenu]=useState(false);
   const flash=(message:string,type:Notice['type']='success')=>{setNotice({message,type});window.setTimeout(()=>setNotice(null),6500);};
@@ -291,8 +299,31 @@ function App(){
   useEffect(()=>{if(authReady)void reload();},[reload,authReady]);
   const connectionCheck=useCallback(async()=>{
     if(!session||!cloudMode)return;
-    try{const r=await api('connection',session.access_token);setConnected(r.connected);setConfigured(r.configured);}
-    catch{setConnected(false);}
+    setBackendError(null);
+    try{
+      const response=await fetch('/api/olx?action=health',{cache:'no-store'});
+      if(!response.ok)throw new Error('O diagnóstico da integração não respondeu (HTTP '+response.status+').');
+      const check=(await response.json()) as IntegrationHealth;
+      setHealth(check);
+      setConfigured(check.olx.ready);
+      if(!check.supabase.ready){
+        setConnected(false);
+        setBackendError('Falta configurar o backend Supabase na Vercel.');
+        return;
+      }
+      try{
+        const result=await api('connection',session.access_token);
+        setConnected(result.connected);
+        setConfigured(Boolean(result.configured));
+      }catch(error){
+        setConnected(false);
+        setBackendError(errorText(error));
+      }
+    }catch(error){
+      setConnected(false);
+      setHealth(null);
+      setBackendError(errorText(error));
+    }
   },[session]);
   useEffect(()=>{void connectionCheck();},[connectionCheck]);
   useEffect(()=>{
@@ -436,7 +467,21 @@ function App(){
         {page==='settings'&&<>
           <div className="heading-row"><div><span className="eyebrow">CONFIGURAÇÃO E ACESSO</span><h1>Integração OLX <span className="heading-dot">.</span></h1><p>Conexão segura com sua conta profissional.</p></div></div>
           <div className="settings-grid"><section className="panel settings-main"><div className="settings-logo">olx</div><h2>{connected?'Sua conta está conectada':'Conecte sua conta empresarial'}</h2><p>A autenticação acontece no ambiente oficial da OLX. Suas credenciais de acesso não são solicitadas pelo nosso painel.</p><div className={'connection-status '+(connected?'yes':'')}><span className={'status-lamp '+(connected?'online':'')}/>{connected?'Integração conectada':'Integração desconectada'}</div>
-            {!cloudMode?<div className="inline-alert"><CloudOff size={17}/> Configure Supabase e publique no Vercel para habilitar a conexão oficial.</div>:!configured?<div className="inline-alert"><AlertCircle size={17}/> Credenciais OLX ainda não cadastradas no backend Vercel.</div>:null}
+            <div className="integration-diagnostics">
+              <div className="integration-diagnostic-title"><ShieldCheck size={18}/><div><b>Diagnóstico da integração</b><small>Configuração verificada no servidor, sem expor senhas ou tokens.</small></div><button type="button" className="btn btn-light" onClick={()=>void connectionCheck()}><RefreshCw size={15}/> Verificar</button></div>
+              {health?<div className="integration-diagnostic-list">
+                <div className={health.supabase.ready?'diag-ok':'diag-issue'}>
+                  {health.supabase.ready?<CheckCircle2 size={17}/>:<AlertCircle size={17}/>}
+                  <div><b>Banco Supabase (backend)</b><small>{health.supabase.ready?'Variáveis do servidor configuradas.': 'Variáveis faltando: '+health.supabase.missing.join(', ')}</small></div>
+                </div>
+                <div className={health.olx.ready?'diag-ok':'diag-issue'}>
+                  {health.olx.ready?<CheckCircle2 size={17}/>:<AlertCircle size={17}/>}
+                  <div><b>Credenciais da API OLX</b><small>{health.olx.ready?'Variáveis da integração configuradas. É necessário autorizar a aplicação na OLX.':'Variáveis faltando: '+health.olx.missing.join(', ')}</small></div>
+                </div>
+              </div>:<div className="inline-alert"><Info size={17}/> Aguarde o diagnóstico do servidor ou clique em Verificar.</div>}
+              {backendError&&<div className="inline-alert auth-error"><AlertCircle size={17}/>{backendError}</div>}
+              {health&&(!health.supabase.ready||!health.olx.ready)&&<p className="diagnostic-help">Adicione as variáveis faltantes em <b>Vercel → Settings → Environment Variables → Production</b> e faça um novo deploy. As chaves privadas devem ficar somente na Vercel, nunca no frontend.</p>}
+            </div>
             {connected?<div className="integration-actions">
               <div className="connection-test">
                 <div className="connection-test-heading"><div className="test-icon"><ShieldCheck size={20}/></div><div><b>Validar acesso à API OLX</b><p>Consulta seu plano e saldo de anúncios sem publicar nada.</p></div></div>
@@ -448,7 +493,7 @@ function App(){
                 <div><span>01</span><p><b>Login Shopping Car</b><small>Você já está conectado ao portal.</small></p><CheckCircle2 size={18}/></div>
                 <div><span>02</span><p><b>Autorizar na OLX</b><small>Você será redirecionado para auth.olx.com.br.</small></p><ArrowUpRight size={17}/></div>
                 <div><span>03</span><p><b>Validar conexão</b><small>Depois, consulte o saldo da conta sem publicar.</small></p><ShieldCheck size={17}/></div>
-              </div><button className="btn btn-primary btn-wide" onClick={()=>void connect()} disabled={!cloudMode||!configured||Boolean(working)}><Link2 size={17}/> Conectar conta na OLX <ArrowUpRight size={16}/></button></div>}
+              </div><button className="btn btn-primary btn-wide" onClick={()=>void connect()} disabled={!cloudMode||!health?.supabase.ready||!configured||Boolean(working)}><Link2 size={17}/> Conectar conta na OLX <ArrowUpRight size={16}/></button></div>}
           </section><section className="panel settings-checklist"><h3>O que você precisa</h3><div className="checklist"><div><CheckCircle2 size={18}/><span>Plano profissional OLX compatível com API</span></div><div><CheckCircle2 size={18}/><span>Aplicação cadastrada e autorização autoupload</span></div><div><CheckCircle2 size={18}/><span>Supabase e ambiente de produção configurados</span></div><div><CheckCircle2 size={18}/><span>Fotos públicas e dados oficiais do veículo</span></div></div><a className="documentation-link" href="https://developers.olx.com.br/anuncio/api/home.html" target="_blank" rel="noopener noreferrer"><ClipboardList size={17}/> Documentação oficial <ExternalLink size={15}/></a></section></div>
           <div className="panel policy-panel"><ShieldCheck size={23}/><div><h3>14 cidades: um planejamento, não 14 anúncios iguais</h3><p>O sistema foi projetado para permitir a seleção de regiões estratégicas, mas só envia um anúncio por veículo usando o CEP real. A publicação duplicada em diferentes cidades está bloqueada em respeito às regras da OLX.</p></div></div>
         </>}

@@ -85,3 +85,16 @@ O repositório agora inclui **somente a URL e a chave publishable (pública)** e
 As chaves privadas `SUPABASE_SERVICE_ROLE_KEY` e `OLX_CLIENT_SECRET` **não devem ser enviadas por chat ou commitadas**. Configure-as no cofre de variáveis de ambiente do projeto Vercel. As variáveis de ambiente cadastradas na Vercel podem sobrescrever o arquivo `.env.production` quando a aplicação for compilada; confira para não usar outro Supabase por engano.
 
 Sem credenciais da OLX e autorização profissional real, o botão Conectar OLX permanece indisponível, embora o login do portal funcione após a criação do usuário no Supabase.
+
+
+## Diagnóstico da conexão OLX — outubro de 2026
+A tela **Integração OLX** agora consulta o estado de configuração do backend no endpoint de leitura `GET /api/olx?action=health`. O diagnóstico **não expõe valores** de senhas, tokens nem credenciais; exibe apenas as variáveis ausentes.
+
+Quando aparecer **Backend Supabase incompleto**, configure no projeto da Vercel (ambiente Production):
+- `SUPABASE_URL` = `https://jmrcvfrpwrehdaynabgb.supabase.co` (URL pública)
+- `SUPABASE_SERVICE_ROLE_KEY` = chave secreta Supabase, cadastrada somente no painel da Vercel. **Não envie essa chave por chat, não inclua em GitHub e nunca use o prefixo `VITE_`**.
+- `OLX_CLIENT_ID` e `OLX_CLIENT_SECRET`, fornecidos pela OLX ao integrador após registro.
+- `APP_ORIGIN` = `https://sistema-integrado-olx.vercel.app`
+- `OLX_REDIRECT_URI` = `https://sistema-integrado-olx.vercel.app/api/olx?callback=1` (deve ser registrada exatamente assim na OLX).
+
+Após cadastrar as variáveis, faça **redeploy em Production** na Vercel para que a função serverless carregue a nova configuração. O botão **Verificar** atualiza o diagnóstico; o botão **Conectar** somente é liberado quando os dois grupos de variáveis estão configurados. Isso não substitui a execução de `supabase/schema.sql`, o registro da aplicação na OLX e as permissões da conta empresarial.

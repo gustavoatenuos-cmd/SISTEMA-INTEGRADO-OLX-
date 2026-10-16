@@ -6,7 +6,7 @@ const OLX_AUTH='https://auth.olx.com.br';
 function fail(res,status,message){return res.status(status).json({error:message});}
 function service(){
   if(!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY){
-    throw new Error('Configuração do Supabase no servidor incompleta');
+    throw Object.assign(new Error('Backend Supabase incompleto. Configure SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY na Vercel (Production) e faça um novo deploy.'),{status:503});
   }
   return createClient(process.env.SUPABASE_URL,process.env.SUPABASE_SERVICE_ROLE_KEY,{
     auth:{autoRefreshToken:false,persistSession:false}
@@ -98,8 +98,21 @@ export default async function handler(req,res){
   res.setHeader('Cache-Control','no-store');
   if(!['GET','POST'].includes(req.method))return fail(res,405,'Método não permitido');
   try{
-    const db=service();
     const query=new URL(req.url,'http://localhost').searchParams;
+    // Diagnóstico de implantação sem dados sensíveis, senhas ou tokens.
+    // Disponível inclusive quando falta a service role e o backend não consegue iniciar.
+    if(req.method==='GET'&&query.get('action')==='health'){
+      const dbMissing=['SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY']
+        .filter(name=>!process.env[name]?.trim());
+      const olxMissing=['OLX_CLIENT_ID','OLX_CLIENT_SECRET','OLX_REDIRECT_URI','APP_ORIGIN']
+        .filter(name=>!process.env[name]?.trim());
+      return res.status(200).json({
+        supabase:{ready:dbMissing.length===0,missing:dbMissing},
+        olx:{ready:olxMissing.length===0,missing:olxMissing},
+        checkedAt:new Date().toISOString()
+      });
+    }
+    const db=service();
     // Retorno OAuth: validamos state emitido para um usuário autenticado previamente.
     if(req.method==='GET'&&query.get('callback')==='1'){
       const cfg=config();
