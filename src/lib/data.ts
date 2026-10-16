@@ -39,8 +39,13 @@ export type Vehicle = {
   updated_at: string;
 };
 export const storageBucket = 'olx-vehicle-images';
-const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const anon = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+// URL e publishable key são públicas; fallback mantém o portal operante
+// mesmo quando as variáveis VITE_ não foram configuradas na Vercel.
+// Variáveis de ambiente corretas continuam tendo precedência.
+const url = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim()
+  || 'https://jmrcvfrpwrehdaynabgb.supabase.co';
+const anon = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)?.trim()
+  || 'sb_publishable__1MdzyomyDH3cR2ab3oBLw_anwjIV7G';
 export const cloudMode = Boolean(url && anon);
 export const supabase = cloudMode ? createClient(url!, anon!, { auth: { persistSession: true, autoRefreshToken: true } }) : null;
 
